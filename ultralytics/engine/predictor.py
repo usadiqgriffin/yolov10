@@ -33,6 +33,7 @@ import platform
 import re
 import threading
 from pathlib import Path
+import logging
 
 import cv2
 import numpy as np
@@ -139,6 +140,7 @@ class BasePredictor:
             if self.args.visualize and (not self.source_type.tensor)
             else False
         )
+        logging.critical(f"Model used for inference:{self.model}")
         return self.model(im, augment=self.args.augment, visualize=visualize, embed=self.args.embed, *args, **kwargs)
 
     def pre_transform(self, im):
@@ -389,7 +391,10 @@ class BasePredictor:
 
     def run_callbacks(self, event: str):
         """Runs all registered callbacks for a specific event."""
+
+        
         for callback in self.callbacks.get(event, []):
+            logging.critical(f"Postprocessing: calling callbacks {callback}")
             callback(self)
 
     def add_callback(self, event: str, func):

@@ -16,7 +16,7 @@ from ultralytics.data.augment import LetterBox
 from ultralytics.utils import LOGGER, SimpleClass, ops
 from ultralytics.utils.plotting import Annotator, colors, save_one_box
 from ultralytics.utils.torch_utils import smart_inference_mode
-
+import logging
 
 class BaseTensor(SimpleClass):
     """Base tensor class with additional methods for easy manipulation and device handling."""
@@ -271,6 +271,7 @@ class Results(SimpleClass):
             idx = pred_boxes.cls if pred_boxes else range(len(pred_masks))
             annotator.masks(pred_masks.data, colors=[colors(x, True) for x in idx], im_gpu=im_gpu)
 
+        conf_lower = 0.15
         # Plot Detect results
         if pred_boxes is not None and show_boxes:
             for d in reversed(pred_boxes):
@@ -278,7 +279,12 @@ class Results(SimpleClass):
                 name = ("" if id is None else f"id:{id} ") + names[c]
                 label = (f"{name} {conf:.2f}" if conf else name) if labels else None
                 box = d.xyxyxyxy.reshape(-1, 4, 2).squeeze() if is_obb else d.xyxy.squeeze()
-                annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
+                box_area = (box[2] - box[0]) * (box[3] - box[1])
+                conf_ratio = (conf_lower/2.0)/4000.0 * (box_area - 2000.0) + conf_lower/2.0
+
+                if conf > conf_lower or conf > conf_ratio:
+                    annotator.box_label(box, label, color=colors(c, True), rotated=is_obb)
+                logging.critical(f"Conf:{conf:.2f}, Label:{label}, Area:{box_area:.1f}, Ratio:{conf_ratio:.1f}")
 
         # Plot Classify results
         if pred_probs is not None and show_probs:

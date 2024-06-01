@@ -3,6 +3,7 @@
 import contextlib
 from copy import deepcopy
 from pathlib import Path
+import logging
 
 import torch
 import torch.nn as nn
@@ -89,6 +90,8 @@ class BaseModel(nn.Module):
         Returns:
             (torch.Tensor): The output of the network.
         """
+
+        logging.critical(f"\nBase model's forward function invoked!")
         if isinstance(x, dict):  # for cases of training and validating while training.
             return self.loss(x, *args, **kwargs)
         return self.predict(x, *args, **kwargs)
@@ -138,6 +141,8 @@ class BaseModel(nn.Module):
                 embeddings.append(nn.functional.adaptive_avg_pool2d(x, (1, 1)).squeeze(-1).squeeze(-1))  # flatten
                 if m.i == max(embed):
                     return torch.unbind(torch.cat(embeddings, 1), dim=0)
+        logging.critical(f"\nPrediction returned by the model: type:{type(x)}, fields:{x.keys()}")
+        logging.critical(f"\nModel final layer:{m}")
         return x
 
     def _predict_augment(self, x):
